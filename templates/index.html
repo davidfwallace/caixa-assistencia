@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Caixa Assistência</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <style>
+    .entrada { color: #2e7d32; }
+    .saida { color: #c62828; }
+    .erro { border-left: 4px solid #c62828; }
+  </style>
+</head>
+<body>
+<main class="container">
+  <h1>Caixa Assistência</h1>
+
+  {% for mensagem in get_flashed_messages() %}
+    <article class="erro">{{ mensagem }}</article>
+  {% endfor %}
+
+  <form method="get">
+    <fieldset role="group">
+      <input type="month" name="mes" value="{{ mes_texto }}">
+      <button type="submit">Ver mês</button>
+    </fieldset>
+  </form>
+
+  <div class="grid">
+    <article><small>Entradas</small><h3 class="entrada">{{ entradas | reais }}</h3></article>
+    <article><small>Saídas</small><h3 class="saida">{{ saidas | reais }}</h3></article>
+    <article><small>Saldo</small><h3>{{ saldo | reais }}</h3></article>
+  </div>
+
+  <h2>Lançamentos</h2>
+  {% if lancamentos %}
+    <div class="overflow-auto">
+      <table>
+        <thead>
+          <tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th></tr>
+        </thead>
+        <tbody>
+          {% for l in lancamentos %}
+            <tr>
+              <td>{{ l.data.strftime("%d/%m") }}</td>
+              <td>{{ l.descricao }}</td>
+              <td>{{ l.categoria }}</td>
+              <td class="{{ l.tipo }}">{{ l.valor_centavos | reais }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Por categoria</h2>
+    <ul>
+      {% for categoria, total in por_categoria.items() %}
+        <li>{{ categoria }}: {{ total | reais }}</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>Nenhum lançamento neste mês.</p>
+  {% endif %}
+
+  <h2>Novo lançamento</h2>
+  <form method="post" action="{{ url_for('adicionar') }}">
+    <div class="grid">
+      <label>Data
+        <input type="date" name="data" value="{{ hoje }}" required>
+      </label>
+      <label>Valor (R$)
+        <input type="text" name="valor" placeholder="49,90" required>
+      </label>
+    </div>
+    <label>Descrição
+      <input type="text" name="descricao" placeholder="Ex.: troca de bateria iPhone 11" required>
+    </label>
+    <label>Categoria
+      <select name="categoria" required>
+        <optgroup label="Entradas">
+          {% for c in categorias["entrada"] %}<option>{{ c }}</option>{% endfor %}
+        </optgroup>
+        <optgroup label="Saídas">
+          {% for c in categorias["saida"] %}<option>{{ c }}</option>{% endfor %}
+        </optgroup>
+      </select>
+    </label>
+    <button type="submit">Adicionar</button>
+  </form>
+</main>
+</body>
+</html>
