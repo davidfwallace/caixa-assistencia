@@ -9,6 +9,7 @@ from caixa.repositorio import RepositorioLancamentos
 from caixa.catalogo import ACESSORIOS, MODELOS, PECAS, SERVICOS
 from caixa.estoque import ItemEstoque, gerar_pedido, itens_para_repor
 from caixa.repositorio_estoque import RepositorioEstoque
+from dataclasses import asdict
 
 # {"Conserto": "entrada", "Peças": "saida", ...}
 TIPO_DA_CATEGORIA = {
@@ -48,6 +49,11 @@ def criar_app(caminho_banco="caixa.db"):
             por_categoria=total_por_categoria(do_mes),
             categorias=CATEGORIAS,
             hoje=hoje.isoformat(),
+            servicos=SERVICOS,
+            acessorios=ACESSORIOS,
+            pecas=PECAS,
+            modelos=MODELOS,
+            itens=[asdict(item) for item in repo_estoque.listar()],
         )
 
     @app.post("/lancamentos")
@@ -118,8 +124,23 @@ def criar_app(caminho_banco="caixa.db"):
             flash(f"{lancamento.descricao} registrada no caixa.", "sucesso")
         return redirect(url_for("estoque"))
 
-    return app
+    @app.post("/servicos")
+    def registrar_uso():
+        formulario = request.form
+        try:
+            lancamento = repo_estoque.registrar_uso(
+                item_id=int(formulario.get("item_id", "")),
+                data=date.fromisoformat(formulario.get("data", "")),
+                valor_centavos=reais_para_centavos(formulario.get("valor", "")),
+            )
+        except ValueError as erro:
+            flash(f"Não foi possível registrar: {erro}", "erro")
+            return redirect(url_for("index"))
 
+        flash(f"{lancamento.categoria} registrado: {lancamento.descricao}.", "sucesso")
+        return redirect(url_for("index", mes=lancamento.data.strftime("%Y-%m")))
+
+    return app
 
 if __name__ == "__main__":
     criar_app().run(debug=True, port=5001)

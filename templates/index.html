@@ -46,7 +46,45 @@
     <p>Nenhum lançamento neste mês.</p>
   {% endif %}
 
-  <h2>Novo lançamento</h2>
+  <h2>Novo conserto ou venda</h2>
+  <form method="post" action="{{ url_for('registrar_uso') }}">
+    <div class="grid">
+      <label>Serviço / produto
+        <select id="uso-peca">
+          <optgroup label="Consertos">
+            {% for p in servicos %}<option>{{ p }}</option>{% endfor %}
+          </optgroup>
+          <optgroup label="Acessórios">
+            {% for p in acessorios %}<option>{{ p }}</option>{% endfor %}
+          </optgroup>
+        </select>
+      </label>
+      <label>Subcategoria
+        <select id="uso-variante"></select>
+      </label>
+      <label>Modelo
+        <select id="uso-modelo">
+          {% for m in modelos %}<option>{{ m }}</option>{% endfor %}
+        </select>
+      </label>
+    </div>
+
+    <p id="uso-aviso"></p>
+    <input type="hidden" name="item_id" id="uso-item-id">
+
+    <div class="grid">
+      <label>Data
+        <input type="date" name="data" value="{{ hoje }}" required>
+      </label>
+      <label>Valor cobrado (R$)
+        <input type="text" name="valor" id="uso-valor" required>
+      </label>
+    </div>
+    <button type="submit" id="uso-botao">Registrar</button>
+  </form>
+
+  <h2>Lançamento avulso</h2>
+  <p><small>Para despesas e serviços que não usam peça do estoque (ex.: "Outro").</small></p>
   <form method="post" action="{{ url_for('adicionar') }}">
     <div class="grid">
       <label>Data
@@ -71,4 +109,49 @@
     </label>
     <button type="submit">Adicionar</button>
   </form>
+  <script src="{{ url_for('static', filename='catalogo.js') }}"></script>
+  <script>
+    const PECAS = {{ pecas | tojson }};
+    const ITENS = {{ itens | tojson }};
+
+    const peca = document.getElementById("uso-peca");
+    const variante = document.getElementById("uso-variante");
+    const modelo = document.getElementById("uso-modelo");
+    const itemId = document.getElementById("uso-item-id");
+    const valor = document.getElementById("uso-valor");
+    const aviso = document.getElementById("uso-aviso");
+    const botao = document.getElementById("uso-botao");
+
+    function atualizarItem() {
+      const item = ITENS.find(function (i) {
+        return i.peca === peca.value
+          && i.variante === variante.value
+          && i.modelo === modelo.value;
+      });
+
+      if (item && item.quantidade > 0) {
+        itemId.value = item.id;
+        valor.value = (item.preco_centavos / 100).toFixed(2).replace(".", ",");
+        aviso.textContent = "Em estoque: " + item.quantidade;
+        botao.disabled = false;
+      } else {
+        itemId.value = "";
+        valor.value = "";
+        aviso.textContent = item
+          ? "Esta peça acabou no estoque."
+          : "Esta peça não está cadastrada no estoque.";
+        botao.disabled = true;
+      }
+    }
+
+    peca.addEventListener("change", function () {
+      preencherSubcategorias(peca, variante, PECAS);
+      atualizarItem();
+    });
+    variante.addEventListener("change", atualizarItem);
+    modelo.addEventListener("change", atualizarItem);
+
+    preencherSubcategorias(peca, variante, PECAS);
+    atualizarItem();
+  </script>
 {% endblock %}
