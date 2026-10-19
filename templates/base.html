@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Caixa Assistência</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <style>
+    .entrada { color: #2e7d32; }
+    .saida { color: #c62828; }
+    .erro { border-left: 4px solid #c62828; }
+    .sucesso { border-left: 4px solid #2e7d32; }
+    .alerta { border-left: 4px solid #ef6c00; }
+  </style>
+</head>
+<body>
+  <nav class="container">
+    <ul><li><strong>Caixa Assistência</strong></li></ul>
+    <ul>
+      <li><a href="{{ url_for('index') }}">Caixa</a></li>
+      <li><a href="{{ url_for('estoque') }}">Estoque</a></li>
+    </ul>
+  </nav>
+
+  <main class="container">
+    {% if alertas %}
+      <article class="alerta">
+        ⚠️ <strong>Fazer pedido ao fornecedor:</strong>
+        <ul>
+          {% for item in alertas %}
+            <li>{{ item.nome }} (restam {{ item.quantidade }})</li>
+          {% endfor %}
+        </ul>
+        <a href="{{ url_for('estoque') }}#pedido">Ver pedido pronto</a>
+      </article>
+    {% endif %}
+
+    {% for categoria, mensagem in get_flashed_messages(with_categories=true) %}
+      <article class="{{ categoria }}">{{ mensagem }}</article>
+    {% endfor %}
+
+    {% block conteudo %}{% endblock %}
+  </main>
+</body>
+</html>

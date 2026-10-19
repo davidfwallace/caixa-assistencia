@@ -1,23 +1,7 @@
-<!doctype html>
-<html lang="pt-BR">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Caixa Assistência</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
-  <style>
-    .entrada { color: #2e7d32; }
-    .saida { color: #c62828; }
-    .erro { border-left: 4px solid #c62828; }
-  </style>
-</head>
-<body>
-<main class="container">
-  <h1>Caixa Assistência</h1>
+{% extends "base.html" %}
 
-  {% for mensagem in get_flashed_messages() %}
-    <article class="erro">{{ mensagem }}</article>
-  {% endfor %}
+{% block conteudo %}
+  <h1>Caixa</h1>
 
   <form method="get">
     <fieldset role="group">
@@ -73,7 +57,7 @@
       </label>
     </div>
     <label>Descrição
-      <input type="text" name="descricao" placeholder="Ex.: troca de bateria iPhone 11" required>
+      <input type="text" name="descricao" placeholder="Ex.: aluguel do ponto" required>
     </label>
     <label>Categoria
       <select name="categoria" required>
@@ -87,6 +71,4 @@
     </label>
     <button type="submit">Adicionar</button>
   </form>
-</main>
-</body>
-</html>
+{% endblock %}
