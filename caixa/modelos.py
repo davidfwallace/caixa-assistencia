@@ -17,6 +17,7 @@ class Lancamento:
     categoria: str
     valor_centavos: int
     tipo: str
+    item_id: int | None = None
 
     def __post_init__(self):
         if self.tipo not in CATEGORIAS:

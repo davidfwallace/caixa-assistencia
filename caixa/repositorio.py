@@ -1,53 +1,41 @@
-import sqlite3
 from datetime import date
 from pathlib import Path
 
+from caixa.banco import abrir, inicializar
 from caixa.modelos import Lancamento
 
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS lancamentos (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    data TEXT NOT NULL,
-    descricao TEXT NOT NULL,
-    categoria TEXT NOT NULL,
-    valor_centavos INTEGER NOT NULL,
-    tipo TEXT NOT NULL
-)
-"""
+
+def inserir_lancamento(conexao, lancamento: Lancamento) -> None:
+    conexao.execute(
+        "INSERT INTO lancamentos (data, descricao, categoria, valor_centavos, tipo, item_id) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (
+            lancamento.data.isoformat(),
+            lancamento.descricao,
+            lancamento.categoria,
+            lancamento.valor_centavos,
+            lancamento.tipo,
+            lancamento.item_id,
+        ),
+    )
 
 
 class RepositorioLancamentos:
     def __init__(self, caminho_banco: str | Path):
         self.caminho_banco = caminho_banco
-        self._executar(SCHEMA)
-
-    def _executar(self, sql: str, parametros: tuple = ()) -> list:
-        conexao = sqlite3.connect(self.caminho_banco)
-        try:
-            with conexao:  # confirma a operação se der certo, desfaz se der erro
-                return conexao.execute(sql, parametros).fetchall()
-        finally:
-            conexao.close()
+        inicializar(caminho_banco)
 
     def adicionar(self, lancamento: Lancamento) -> None:
-        self._executar(
-            "INSERT INTO lancamentos (data, descricao, categoria, valor_centavos, tipo) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (
-                lancamento.data.isoformat(),
-                lancamento.descricao,
-                lancamento.categoria,
-                lancamento.valor_centavos,
-                lancamento.tipo,
-            ),
-        )
+        with abrir(self.caminho_banco) as conexao:
+            inserir_lancamento(conexao, lancamento)
 
     def listar(self) -> list[Lancamento]:
-        linhas = self._executar(
-            "SELECT data, descricao, categoria, valor_centavos, tipo "
-            "FROM lancamentos ORDER BY data, id"
-        )
+        with abrir(self.caminho_banco) as conexao:
+            linhas = conexao.execute(
+                "SELECT data, descricao, categoria, valor_centavos, tipo, item_id "
+                "FROM lancamentos ORDER BY data, id"
+            ).fetchall()
         return [
-            Lancamento(date.fromisoformat(data), descricao, categoria, valor, tipo)
-            for data, descricao, categoria, valor, tipo in linhas
+            Lancamento(date.fromisoformat(data), descricao, categoria, valor, tipo, item_id)
+            for data, descricao, categoria, valor, tipo, item_id in linhas
         ]
