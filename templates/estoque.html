@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+  <h1>Estoque</h1>
+
+  {% if itens %}
+    <div class="overflow-auto">
+      <table>
+        <thead>
+          <tr><th>Item</th><th>Qtd.</th><th>Mínimo</th><th>Custo</th><th>Preço</th></tr>
+        </thead>
+        <tbody>
+          {% for item in itens %}
+            <tr>
+              <td>{{ item.nome }}</td>
+              <td class="{{ 'saida' if item.precisa_repor }}">
+                {{ item.quantidade }}{% if item.precisa_repor %} ⚠️{% endif %}
+              </td>
+              <td>{{ item.minimo }}</td>
+              <td>{{ item.custo_centavos | reais }}</td>
+              <td>{{ item.preco_centavos | reais }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p>Nenhum item cadastrado ainda.</p>
+  {% endif %}
+
+  {% if pedido %}
+    <h2 id="pedido">Pedido ao fornecedor</h2>
+    <textarea readonly rows="6">{{ pedido }}</textarea>
+    <a role="button" href="https://wa.me/?text={{ pedido | urlencode }}" target="_blank">
+      Enviar pelo WhatsApp
+    </a>
+  {% endif %}
+
+  <h2>Registrar compra</h2>
+  {% if itens %}
+    <form method="post" action="{{ url_for('registrar_compra') }}">
+      <label>Item
+        <select name="item_id" required>
+          {% for item in itens %}
+            <option value="{{ item.id }}">{{ item.nome }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <div class="grid">
+        <label>Quantidade
+          <input type="number" name="quantidade" min="1" value="10" required>
+        </label>
+        <label>Custo unitário (R$)
+          <input type="text" name="custo" placeholder="89,90" required>
+        </label>
+      </div>
+      <button type="submit">Registrar compra</button>
+    </form>
+  {% else %}
+    <p>Cadastre um item primeiro.</p>
+  {% endif %}
+
+  <h2>Cadastrar item</h2>
+  <form method="post" action="{{ url_for('cadastrar_item') }}">
+    <div class="grid">
+
+
+      <label>Peça
+        <select name="peca" id="peca" required>
+          <optgroup label="Peças de conserto">
+            {% for p in servicos %}<option>{{ p }}</option>{% endfor %}
+          </optgroup>
+          <optgroup label="Acessórios">
+            {% for p in acessorios %}<option>{{ p }}</option>{% endfor %}
+          </optgroup>
+        </select>
+      </label>
+      <label>Subcategoria
+        <select name="variante" id="variante"></select>
+      </label>
+      <label>Modelo
+        <select name="modelo" required>
+          {% for m in modelos %}<option>{{ m }}</option>{% endfor %}
+        </select>
+      </label>
+    </div>
+    <div class="grid">
+      <label>Qtd. que você já tem
+        <input type="number" name="quantidade" min="0" value="0" required>
+      </label>
+      <label>Custo unitário (R$)
+        <input type="text" name="custo" placeholder="89,90" required>
+      </label>
+      <label>Preço de venda (R$)
+        <input type="text" name="preco" placeholder="250,00" required>
+      </label>
+      <label>Estoque mínimo
+        <input type="number" name="minimo" min="0" value="5" required>
+      </label>
+    </div>
+    <button type="submit">Cadastrar</button>
+  </form>
+{% endblock %}
