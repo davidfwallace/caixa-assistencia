@@ -6,7 +6,13 @@ Controle de caixa para uma pequena assistência técnica de iPhones: consertos (
 
 Projeto pessoal criado para praticar engenharia de software: separação de responsabilidades, testes automatizados e integração contínua.
 
-> 🚧 Em desenvolvimento. A lógica do caixa está pronta e testada; a interface web está em construção.
+Interface web:
+
+```bash
+python app.py
+```
+
+Acesse http://127.0.0.1:5001
 
 ## Funcionalidades
 
@@ -76,8 +82,8 @@ O projeto tem 31 testes automatizados, com atenção especial a casos de borda: 
 
 ## Próximos passos
 
-- [ ] Interface web com Flask
-- [ ] Persistência dos lançamentos em banco de dados (SQLite)
+- [x] Interface web com Flask
+- [x] Persistência dos lançamentos em banco de dados (SQLite)
 - [ ] Importação de lançamentos a partir de CSV
 - [ ] v2: rastrear o lucro por aparelho (compra de aparelho com defeito → peças → revenda)
 
