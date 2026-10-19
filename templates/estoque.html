@@ -100,4 +100,17 @@
     </div>
     <button type="submit">Cadastrar</button>
   </form>
+    <script src="{{ url_for('static', filename='catalogo.js') }}"></script>
+  <script>
+    const PECAS = {{ pecas | tojson }};
+    const seletorPeca = document.getElementById("peca");
+    const seletorVariante = document.getElementById("variante");
+
+    function atualizar() {
+      preencherSubcategorias(seletorPeca, seletorVariante, PECAS);
+    }
+
+    seletorPeca.addEventListener("change", atualizar);
+    atualizar();
+  </script>
 {% endblock %}
