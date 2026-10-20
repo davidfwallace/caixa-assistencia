@@ -24,6 +24,16 @@ CREATE TABLE IF NOT EXISTS lancamentos (
     item_id INTEGER REFERENCES estoque(id),
     custo_centavos INTEGER NOT NULL DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS perdas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    data TEXT NOT NULL,
+    item_id INTEGER NOT NULL REFERENCES estoque(id),
+    descricao TEXT NOT NULL,
+    quantidade INTEGER NOT NULL CHECK (quantidade > 0),
+    custo_unitario_centavos INTEGER NOT NULL,
+    motivo TEXT NOT NULL
+);
 """
 
 

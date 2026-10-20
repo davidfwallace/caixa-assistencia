@@ -5,7 +5,7 @@ from pathlib import Path
 from caixa.banco import abrir, inicializar
 from caixa.catalogo import SERVICOS
 from caixa.estoque import ItemEstoque
-from caixa.modelos import ENTRADA, SAIDA, Lancamento
+from caixa.modelos import ENTRADA, SAIDA, Lancamento, Perda
 from caixa.repositorio import inserir_lancamento
 
 COLUNAS = "id, peca, variante, modelo, quantidade, custo_centavos, preco_centavos, minimo"
@@ -92,3 +92,32 @@ class RepositorioEstoque:
             )
             inserir_lancamento(conexao, lancamento)
         return lancamento
+
+    def registrar_perda(self, item_id: int, quantidade: int, motivo: str, data: date) -> Perda:
+        """Retira peças do estoque sem venda. Não mexe no caixa; o custo vira prejuízo."""
+        with abrir(self.caminho_banco) as conexao:
+            item = _buscar(conexao, item_id)
+            perda = Perda(data, item.id, item.nome, quantidade, item.custo_centavos, motivo)
+            item.baixar(quantidade)
+            conexao.execute(
+                "UPDATE estoque SET quantidade = ? WHERE id = ?", (item.quantidade, item.id)
+            )
+            conexao.execute(
+                "INSERT INTO perdas "
+                "(data, item_id, descricao, quantidade, custo_unitario_centavos, motivo) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (perda.data.isoformat(), perda.item_id, perda.descricao,
+                 perda.quantidade, perda.custo_unitario_centavos, perda.motivo),
+            )
+        return perda
+
+    def listar_perdas(self) -> list[Perda]:
+        with abrir(self.caminho_banco) as conexao:
+            linhas = conexao.execute(
+                "SELECT data, item_id, descricao, quantidade, custo_unitario_centavos, motivo "
+                "FROM perdas ORDER BY data, id"
+            ).fetchall()
+        return [
+            Perda(date.fromisoformat(data), item_id, descricao, quantidade, custo, motivo)
+            for data, item_id, descricao, quantidade, custo, motivo in linhas
+        ]

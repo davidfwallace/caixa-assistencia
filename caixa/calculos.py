@@ -24,18 +24,6 @@ def custo_das_pecas(lancamentos: list[Lancamento]) -> int:
     return sum(l.custo_centavos for l in lancamentos if l.tipo == ENTRADA)
 
 
-def lucro_bruto(lancamentos: list[Lancamento]) -> int:
-    """Receitas menos o custo das peças usadas (compras de estoque não entram)."""
-    return total_por_tipo(lancamentos, ENTRADA) - custo_das_pecas(lancamentos)
-
-
-def margem_percentual(lancamentos: list[Lancamento]) -> float | None:
-    receita = total_por_tipo(lancamentos, ENTRADA)
-    if receita == 0:
-        return None
-    return round(lucro_bruto(lancamentos) / receita * 100, 1)
-
-
 @dataclass
 class ResumoItem:
     nome: str
@@ -55,3 +43,22 @@ def lucro_por_item(lancamentos: list[Lancamento]) -> list[ResumoItem]:
         resumo.receita_centavos += l.valor_centavos
         resumo.lucro_centavos += l.valor_centavos - l.custo_centavos
     return sorted(resumos.values(), key=lambda r: r.lucro_centavos, reverse=True)
+
+def custo_das_perdas(perdas) -> int:
+    return sum(p.custo_total_centavos for p in perdas)
+
+
+def lucro_bruto(lancamentos: list[Lancamento], perdas=()) -> int:
+    """Receitas menos o custo das peças usadas e das peças perdidas."""
+    return (
+        total_por_tipo(lancamentos, ENTRADA)
+        - custo_das_pecas(lancamentos)
+        - custo_das_perdas(perdas)
+    )
+
+
+def margem_percentual(lancamentos: list[Lancamento], perdas=()) -> float | None:
+    receita = total_por_tipo(lancamentos, ENTRADA)
+    if receita == 0:
+        return None
+    return round(lucro_bruto(lancamentos, perdas) / receita * 100, 1)

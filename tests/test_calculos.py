@@ -1,7 +1,7 @@
 from datetime import date
 
 from caixa.calculos import filtrar_por_mes, saldo, total_por_categoria
-from caixa.modelos import ENTRADA, SAIDA, Lancamento
+from caixa.modelos import ENTRADA, SAIDA, Lancamento, Perda
 from caixa.calculos import (
     filtrar_por_mes, lucro_bruto, lucro_por_item, margem_percentual,
     saldo, total_por_categoria,
@@ -87,3 +87,8 @@ def test_lucro_por_item_agrupa_e_ordena_do_maior_pro_menor():
     assert ranking[0].quantidade == 2
     assert ranking[0].receita_centavos == 50000
     assert ranking[0].lucro_centavos == 32020
+
+
+def test_perdas_reduzem_o_lucro_bruto():
+    perda = Perda(date(2026, 10, 10), 1, "Bateria — iPhone 11", 1, 8990, "Troca em garantia")
+    assert lucro_bruto([conserto(25000, 8990)], [perda]) == 25000 - 8990 - 8990

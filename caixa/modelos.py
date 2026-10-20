@@ -31,3 +31,30 @@ class Lancamento:
             raise ValueError("A descrição não pode ficar vazia.")
         if self.custo_centavos < 0:
             raise ValueError("O custo não pode ser negativo.")
+        if self.tipo == SAIDA and self.custo_centavos > 0:
+            raise ValueError("Saídas não têm custo de peça.")
+
+
+MOTIVOS_PERDA = ["Troca em garantia", "Peça com defeito", "Quebrou na instalação", "Outro"]
+
+
+@dataclass
+class Perda:
+    data: date
+    item_id: int
+    descricao: str
+    quantidade: int
+    custo_unitario_centavos: int
+    motivo: str
+
+    def __post_init__(self):
+        if self.quantidade <= 0:
+            raise ValueError("A quantidade perdida deve ser maior que zero.")
+        if self.custo_unitario_centavos < 0:
+            raise ValueError("O custo não pode ser negativo.")
+        if self.motivo not in MOTIVOS_PERDA:
+            raise ValueError(f"Motivo inválido: {self.motivo}")
+
+    @property
+    def custo_total_centavos(self) -> int:
+        return self.quantidade * self.custo_unitario_centavos

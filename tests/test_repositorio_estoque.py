@@ -139,3 +139,27 @@ def test_compra_nova_nao_altera_o_custo_de_consertos_antigos(caminho):
 
     consertos = [l for l in RepositorioLancamentos(caminho).listar() if l.tipo == ENTRADA]
     assert [l.custo_centavos for l in consertos] == [8990, 12000]
+
+
+def test_perda_baixa_estoque_guarda_custo_e_nao_mexe_no_caixa(caminho):
+    estoque = RepositorioEstoque(caminho)
+    item = estoque.adicionar_item(novo_item(quantidade=10, custo_centavos=8990))
+
+    estoque.registrar_perda(item.id, 1, "Troca em garantia", HOJE)
+
+    assert estoque.buscar(item.id).quantidade == 9
+    [perda] = estoque.listar_perdas()
+    assert perda.custo_unitario_centavos == 8990
+    assert perda.descricao == "Bateria — iPhone 11"
+    assert RepositorioLancamentos(caminho).listar() == []
+
+
+def test_perda_maior_que_o_estoque_da_erro_e_nao_registra(caminho):
+    estoque = RepositorioEstoque(caminho)
+    item = estoque.adicionar_item(novo_item(quantidade=1))
+
+    with pytest.raises(EstoqueInsuficiente):
+        estoque.registrar_perda(item.id, 2, "Peça com defeito", HOJE)
+
+    assert estoque.buscar(item.id).quantidade == 1
+    assert estoque.listar_perdas() == []
