@@ -146,7 +146,7 @@ São 100 testes automatizados: testes de unidade (cálculos, validações, casos
 - [ ] Marca e identidade visual
 - [ ] Importação de lançamentos a partir de CSV
 - [ ] Lucro por aparelho seminovo (compra com defeito → peças → revenda)
-- [ ] Expansão para outros aparelhos (ex.: Apple Watch)
+- [ ] Expansão para outros aparelhos (ex.: Apple Watch, MacBook, iPad)
 
 ## Telas
 
