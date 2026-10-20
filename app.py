@@ -3,11 +3,11 @@ from datetime import date
 from flask import Flask, flash, redirect, render_template, request, url_for
 
 from caixa.calculos import (
-    filtrar_por_mes, lucro_bruto, lucro_por_item, margem_percentual,
+    custo_das_perdas, filtrar_por_mes, lucro_bruto, lucro_por_item, margem_percentual,
     saldo, total_por_categoria, total_por_tipo,
 )
+from caixa.modelos import CATEGORIAS, ENTRADA, MOTIVOS_PERDA, SAIDA, Lancamento
 from caixa.dinheiro import formatar_reais, reais_para_centavos
-from caixa.modelos import CATEGORIAS, ENTRADA, SAIDA, Lancamento
 from caixa.repositorio import RepositorioLancamentos
 from caixa.catalogo import ACESSORIOS, MODELOS, PECAS, SERVICOS
 from caixa.estoque import ItemEstoque, gerar_pedido, itens_para_repor
@@ -42,6 +42,7 @@ def criar_app(caminho_banco="caixa.db"):
             mes_texto = hoje.strftime("%Y-%m")
 
         do_mes = filtrar_por_mes(repo.listar(), ano, mes)
+        perdas_do_mes = filtrar_por_mes(repo_estoque.listar_perdas(), ano, mes)
         return render_template(
             "index.html",
             mes_texto=mes_texto,
@@ -49,8 +50,10 @@ def criar_app(caminho_banco="caixa.db"):
             entradas=total_por_tipo(do_mes, ENTRADA),
             saidas=total_por_tipo(do_mes, SAIDA),
             saldo=saldo(do_mes),
-            lucro=lucro_bruto(do_mes),
-            margem=margem_percentual(do_mes),
+            lucro=lucro_bruto(do_mes, perdas_do_mes),
+            margem=margem_percentual(do_mes, perdas_do_mes),
+            perdas=perdas_do_mes,
+            total_perdas=custo_das_perdas(perdas_do_mes),
             ranking=lucro_por_item(do_mes),
             por_categoria=total_por_categoria(do_mes),
             categorias=CATEGORIAS,
@@ -66,13 +69,17 @@ def criar_app(caminho_banco="caixa.db"):
     def adicionar():
         formulario = request.form
         categoria = formulario.get("categoria", "")
+        tipo = TIPO_DA_CATEGORIA.get(categoria, "")
+        custo_texto = formulario.get("custo", "").strip()
         try:
+            custo = reais_para_centavos(custo_texto) if tipo == ENTRADA and custo_texto else 0
             lancamento = Lancamento(
                 data=date.fromisoformat(formulario.get("data", "")),
                 descricao=formulario.get("descricao", ""),
                 categoria=categoria,
                 valor_centavos=reais_para_centavos(formulario.get("valor", "")),
-                tipo=TIPO_DA_CATEGORIA.get(categoria, ""),
+                tipo=tipo,
+                custo_centavos=custo,
             )
         except ValueError as erro:
             flash(f"Não foi possível salvar: {erro}", "erro")
@@ -80,7 +87,7 @@ def criar_app(caminho_banco="caixa.db"):
 
         repo.adicionar(lancamento)
         return redirect(url_for("index", mes=lancamento.data.strftime("%Y-%m")))
-
+    
     @app.get("/estoque")
     def estoque():
         itens = repo_estoque.listar()
@@ -92,22 +99,29 @@ def criar_app(caminho_banco="caixa.db"):
             acessorios=ACESSORIOS,
             pecas=PECAS,
             modelos=MODELOS,
+            motivos=MOTIVOS_PERDA,
+            hoje=date.today().isoformat(),
         )
 
     @app.post("/estoque/itens")
     def cadastrar_item():
         formulario = request.form
         try:
+            quantidade = int(formulario.get("quantidade", "") or 0)
+            if quantidade < 0:
+                raise ValueError("A quantidade não pode ser negativa.")
             item = ItemEstoque(
                 peca=formulario.get("peca", ""),
                 variante=formulario.get("variante", ""),
                 modelo=formulario.get("modelo", ""),
-                quantidade=int(formulario.get("quantidade", "")),
+                quantidade=0,
                 custo_centavos=reais_para_centavos(formulario.get("custo", "")),
                 preco_centavos=reais_para_centavos(formulario.get("preco", "")),
                 minimo=int(formulario.get("minimo", "")),
             )
             repo_estoque.adicionar_item(item)
+            if quantidade > 0:
+                repo_estoque.registrar_compra(item.id, quantidade, item.custo_centavos, date.today())
         except ValueError as erro:
             flash(f"Não foi possível cadastrar: {erro}", "erro")
         else:
@@ -145,6 +159,25 @@ def criar_app(caminho_banco="caixa.db"):
 
         flash(f"{lancamento.categoria} registrado: {lancamento.descricao}.", "sucesso")
         return redirect(url_for("index", mes=lancamento.data.strftime("%Y-%m")))
+
+    @app.post("/estoque/perdas")
+    def registrar_perda():
+        formulario = request.form
+        try:
+            perda = repo_estoque.registrar_perda(
+                item_id=int(formulario.get("item_id", "")),
+                quantidade=int(formulario.get("quantidade", "")),
+                motivo=formulario.get("motivo", ""),
+                data=date.fromisoformat(formulario.get("data", "")),
+            )
+        except ValueError as erro:
+            flash(f"Não foi possível registrar a perda: {erro}", "erro")
+        else:
+            flash(
+                f"Perda registrada: {perda.quantidade}x {perda.descricao} ({perda.motivo}).",
+                "sucesso",
+            )
+        return redirect(url_for("estoque"))
 
     return app
 

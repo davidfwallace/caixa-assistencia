@@ -60,6 +60,39 @@
     <p>Cadastre um item primeiro.</p>
   {% endif %}
 
+  <h2>Retirar do estoque</h2>
+  <p><small>
+    Para peças perdidas, com defeito ou trocadas em garantia. Não mexe no caixa,
+    porque a peça já foi paga na compra, mas o custo entra como prejuízo no lucro do mês.
+  </small></p>
+  {% if itens %}
+    <form method="post" action="{{ url_for('registrar_perda') }}">
+      <label>Item
+        <select name="item_id" required>
+          {% for item in itens %}
+            <option value="{{ item.id }}">{{ item.nome }} ({{ item.quantidade }} em estoque)</option>
+          {% endfor %}
+        </select>
+      </label>
+      <div class="grid">
+        <label>Quantidade
+          <input type="number" name="quantidade" min="1" value="1" required>
+        </label>
+        <label>Motivo
+          <select name="motivo" required>
+            {% for m in motivos %}<option>{{ m }}</option>{% endfor %}
+          </select>
+        </label>
+        <label>Data
+          <input type="date" name="data" value="{{ hoje }}" required>
+        </label>
+      </div>
+      <button type="submit" class="secondary">Retirar do estoque</button>
+    </form>
+  {% else %}
+    <p>Cadastre um item primeiro.</p>
+  {% endif %}
+
   <h2>Cadastrar item</h2>
   <form method="post" action="{{ url_for('cadastrar_item') }}">
     <div class="grid">
@@ -85,8 +118,9 @@
       </label>
     </div>
     <div class="grid">
-      <label>Qtd. que você já tem
+      <label>Quantidade comprada agora
         <input type="number" name="quantidade" min="0" value="0" required>
+        <small>Se for maior que zero, a compra já entra no caixa.</small>
       </label>
       <label>Custo unitário (R$)
         <input type="text" name="custo" placeholder="89,90" required>

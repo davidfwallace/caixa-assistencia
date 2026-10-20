@@ -20,11 +20,14 @@
       {% if margem is not none %}
         <small>Margem: {{ "%.1f" | format(margem) | replace(".", ",") }}%</small>
       {% endif %}
+      {% if total_perdas %}
+        <br><small>Perdas: {{ total_perdas | reais }}</small>
+      {% endif %}
     </article>
   </div>
   <p><small>
     Saldo do caixa: tudo que entrou menos tudo que saiu, incluindo compras de estoque.
-    Lucro bruto: o que você cobrou menos o custo das peças que usou.
+    Lucro bruto: o que você cobrou menos o custo das peças usadas e das peças perdidas.
   </small></p>
 
   <h2>Lançamentos</h2>
@@ -41,8 +44,8 @@
               <td>{{ l.descricao }}</td>
               <td>{{ l.categoria }}</td>
               <td class="{{ l.tipo }}">{{ l.valor_centavos | reais }}</td>
-              <td>
-                {% if l.tipo == "entrada" and l.item_id %}
+              <td class="lucro">
+                {% if l.tipo == "entrada" %}
                   {{ (l.valor_centavos - l.custo_centavos) | reais }}
                 {% else %}
                   —
@@ -82,6 +85,28 @@
     {% endif %}
   {% else %}
     <p>Nenhum lançamento neste mês.</p>
+  {% endif %}
+
+  {% if perdas %}
+    <h2>Perdas do mês</h2>
+    <div class="overflow-auto">
+      <table>
+        <thead>
+          <tr><th>Data</th><th>Item</th><th>Qtd.</th><th>Motivo</th><th>Custo</th></tr>
+        </thead>
+        <tbody>
+          {% for p in perdas %}
+            <tr>
+              <td>{{ p.data.strftime("%d/%m") }}</td>
+              <td>{{ p.descricao }}</td>
+              <td>{{ p.quantidade }}</td>
+              <td>{{ p.motivo }}</td>
+              <td class="saida">{{ p.custo_total_centavos | reais }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   {% endif %}
 
   <h2>Novo conserto ou venda</h2>
@@ -130,6 +155,10 @@
       </label>
       <label>Valor (R$)
         <input type="text" name="valor" placeholder="49,90" required>
+      </label>
+      <label>Custo da peça (R$)
+        <input type="text" name="custo" placeholder="Opcional">
+        <small>Só para entradas. Deixe vazio se não houve custo.</small>
       </label>
     </div>
     <label>Descrição

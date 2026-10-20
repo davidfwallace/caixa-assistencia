@@ -115,3 +115,38 @@ def test_lucro_do_conserto_aparece_no_caixa(cliente):
     caixa = cliente.get("/?mes=2026-10").get_data(as_text=True)
     assert "Lucro bruto" in caixa
     assert "R$ 160,10" in caixa
+
+
+def test_avulso_com_custo_mostra_o_lucro(cliente):
+    cliente.post("/lancamentos", data={
+        "data": "2026-10-03",
+        "descricao": "Tela Apple Watch teste",
+        "categoria": "Conserto",
+        "valor": "350,00",
+        "custo": "200,00",
+    })
+    pagina = cliente.get("/?mes=2026-10").get_data(as_text=True)
+    assert "R$ 150,00" in pagina
+
+
+def test_cadastro_com_quantidade_lanca_a_compra_no_caixa(cliente):
+    cadastrar_item(cliente, quantidade="10")
+    caixa = cliente.get("/").get_data(as_text=True)
+    assert "Compra: 10x Bateria — iPhone 11" in caixa
+
+
+def test_cadastro_sem_quantidade_nao_mexe_no_caixa(cliente):
+    cadastrar_item(cliente, quantidade="0")
+    caixa = cliente.get("/").get_data(as_text=True)
+    assert "Nenhum lançamento neste mês" in caixa
+
+
+def test_perda_reduz_o_lucro_do_mes(cliente):
+    cadastrar_item(cliente, quantidade="10")   # custo de R$ 89,90
+    registrar_conserto(cliente)                # R$ 250,00 em 03/10/2026
+    cliente.post("/estoque/perdas", data={
+        "item_id": "1", "quantidade": "1", "motivo": "Troca em garantia", "data": "2026-10-05",
+    })
+    pagina = cliente.get("/?mes=2026-10").get_data(as_text=True)
+    assert "R$ 70,20" in pagina                # 250,00 − 89,90 − 89,90
+    assert "Troca em garantia" in pagina
