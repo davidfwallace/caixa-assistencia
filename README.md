@@ -34,22 +34,23 @@ Sistema de caixa e estoque para uma pequena assistência técnica de iPhones: co
 
 ## Arquitetura
 
-O projeto é organizado em camadas, e cada camada só conhece a de baixo:
+O domínio fica no centro do projeto: ele não depende de nenhuma outra camada, e são as rotas e os repositórios que dependem dele.
 
 ```
 Navegador
    │  páginas (GET) e formulários (POST)
    ▼
 Rotas ............ app.py
-   │  recebe os dados, chama o domínio e renderiza os templates
-   ▼
-Domínio .......... modelos.py, estoque.py, calculos.py, dinheiro.py, catalogo.py
-   │  regras de negócio e validações (sem SQL e sem HTML)
+   │  recebe os dados, aciona os repositórios e renderiza os templates
    ▼
 Dados ............ repositorio.py, repositorio_estoque.py, banco.py
    │  SQL, transações e migrações
    ▼
 SQLite (caixa.db)
+
+Domínio .......... modelos.py, estoque.py, calculos.py, dinheiro.py, catalogo.py
+   regras de negócio e validações, usadas pelas rotas e pelos repositórios
+   (não importa nenhuma outra camada: sem SQL, sem HTML, sem Flask)
 ```
 
 Como as regras de negócio não dependem do banco nem da web, elas são testadas isoladamente, em milissegundos. Trocar o SQLite por outro banco, por exemplo, afetaria só a camada de dados.
