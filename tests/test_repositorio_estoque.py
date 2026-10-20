@@ -118,3 +118,24 @@ def test_migracao_atualiza_banco_antigo_sem_perder_dados(caminho):
     [lancamento] = RepositorioLancamentos(caminho).listar()
     assert lancamento.descricao == "Troca antiga"
     assert lancamento.item_id is None
+    assert lancamento.custo_centavos == 0
+
+def test_conserto_guarda_o_custo_da_peca(caminho):
+    estoque = RepositorioEstoque(caminho)
+    item = estoque.adicionar_item(novo_item(custo_centavos=8990))
+    estoque.registrar_uso(item.id, HOJE, 25000)
+
+    [salvo] = RepositorioLancamentos(caminho).listar()
+    assert salvo.custo_centavos == 8990
+
+
+def test_compra_nova_nao_altera_o_custo_de_consertos_antigos(caminho):
+    estoque = RepositorioEstoque(caminho)
+    item = estoque.adicionar_item(novo_item(custo_centavos=8990))
+
+    estoque.registrar_uso(item.id, HOJE, 25000)          # conserto com a bateria a R$ 89,90
+    estoque.registrar_compra(item.id, 10, 12000, HOJE)   # fornecedor aumentou pra R$ 120,00
+    estoque.registrar_uso(item.id, HOJE, 25000)          # conserto com a bateria nova
+
+    consertos = [l for l in RepositorioLancamentos(caminho).listar() if l.tipo == ENTRADA]
+    assert [l.custo_centavos for l in consertos] == [8990, 12000]

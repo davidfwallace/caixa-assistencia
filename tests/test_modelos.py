@@ -28,6 +28,7 @@ def test_lancamento_valido_e_criado():
     ("tipo", "transferencia"),
     ("categoria", "Peças"),   # Peças é categoria de saída, não de entrada
     ("descricao", "   "),
+    ("custo_centavos", -1),
 ])
 def test_lancamento_invalido_e_recusado(campo, valor):
     with pytest.raises(ValueError):
