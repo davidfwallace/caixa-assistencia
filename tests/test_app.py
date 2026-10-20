@@ -107,3 +107,11 @@ def test_conserto_sem_estoque_mostra_erro(cliente):
     cadastrar_item(cliente, quantidade="0")
     pagina = registrar_conserto(cliente).get_data(as_text=True)
     assert "Não foi possível registrar" in pagina
+
+
+def test_lucro_do_conserto_aparece_no_caixa(cliente):
+    cadastrar_item(cliente, quantidade="10")   # custo de R$ 89,90
+    registrar_conserto(cliente)                # cobrado R$ 250,00
+    caixa = cliente.get("/?mes=2026-10").get_data(as_text=True)
+    assert "Lucro bruto" in caixa
+    assert "R$ 160,10" in caixa

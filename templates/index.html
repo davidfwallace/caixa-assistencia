@@ -10,18 +10,29 @@
     </fieldset>
   </form>
 
-  <div class="grid">
+    <div class="grid">
     <article><small>Entradas</small><h3 class="entrada">{{ entradas | reais }}</h3></article>
     <article><small>Saídas</small><h3 class="saida">{{ saidas | reais }}</h3></article>
-    <article><small>Saldo</small><h3>{{ saldo | reais }}</h3></article>
+    <article><small>Saldo do caixa</small><h3>{{ saldo | reais }}</h3></article>
+    <article>
+      <small>Lucro bruto</small>
+      <h3>{{ lucro | reais }}</h3>
+      {% if margem is not none %}
+        <small>Margem: {{ "%.1f" | format(margem) | replace(".", ",") }}%</small>
+      {% endif %}
+    </article>
   </div>
+  <p><small>
+    Saldo do caixa: tudo que entrou menos tudo que saiu, incluindo compras de estoque.
+    Lucro bruto: o que você cobrou menos o custo das peças que usou.
+  </small></p>
 
   <h2>Lançamentos</h2>
   {% if lancamentos %}
     <div class="overflow-auto">
       <table>
         <thead>
-          <tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th></tr>
+          <tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Lucro</th></tr>
         </thead>
         <tbody>
           {% for l in lancamentos %}
@@ -30,6 +41,13 @@
               <td>{{ l.descricao }}</td>
               <td>{{ l.categoria }}</td>
               <td class="{{ l.tipo }}">{{ l.valor_centavos | reais }}</td>
+              <td>
+                {% if l.tipo == "entrada" and l.item_id %}
+                  {{ (l.valor_centavos - l.custo_centavos) | reais }}
+                {% else %}
+                  —
+                {% endif %}
+              </td>
             </tr>
           {% endfor %}
         </tbody>
@@ -42,6 +60,26 @@
         <li>{{ categoria }}: {{ total | reais }}</li>
       {% endfor %}
     </ul>
+    {% if ranking %}
+      <h2>Lucro por serviço</h2>
+      <div class="overflow-auto">
+        <table>
+          <thead>
+            <tr><th>Item</th><th>Qtd.</th><th>Receita</th><th>Lucro</th></tr>
+          </thead>
+          <tbody>
+            {% for r in ranking %}
+              <tr>
+                <td>{{ r.nome }}</td>
+                <td>{{ r.quantidade }}</td>
+                <td>{{ r.receita_centavos | reais }}</td>
+                <td>{{ r.lucro_centavos | reais }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
   {% else %}
     <p>Nenhum lançamento neste mês.</p>
   {% endif %}

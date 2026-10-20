@@ -2,7 +2,10 @@ from datetime import date
 
 from flask import Flask, flash, redirect, render_template, request, url_for
 
-from caixa.calculos import filtrar_por_mes, saldo, total_por_categoria, total_por_tipo
+from caixa.calculos import (
+    filtrar_por_mes, lucro_bruto, lucro_por_item, margem_percentual,
+    saldo, total_por_categoria, total_por_tipo,
+)
 from caixa.dinheiro import formatar_reais, reais_para_centavos
 from caixa.modelos import CATEGORIAS, ENTRADA, SAIDA, Lancamento
 from caixa.repositorio import RepositorioLancamentos
@@ -46,6 +49,9 @@ def criar_app(caminho_banco="caixa.db"):
             entradas=total_por_tipo(do_mes, ENTRADA),
             saidas=total_por_tipo(do_mes, SAIDA),
             saldo=saldo(do_mes),
+            lucro=lucro_bruto(do_mes),
+            margem=margem_percentual(do_mes),
+            ranking=lucro_por_item(do_mes),
             por_categoria=total_por_categoria(do_mes),
             categorias=CATEGORIAS,
             hoje=hoje.isoformat(),
