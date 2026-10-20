@@ -7,8 +7,9 @@ from caixa.modelos import Lancamento
 
 def inserir_lancamento(conexao, lancamento: Lancamento) -> None:
     conexao.execute(
-        "INSERT INTO lancamentos (data, descricao, categoria, valor_centavos, tipo, item_id) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO lancamentos "
+        "(data, descricao, categoria, valor_centavos, tipo, item_id, custo_centavos) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
         (
             lancamento.data.isoformat(),
             lancamento.descricao,
@@ -16,6 +17,7 @@ def inserir_lancamento(conexao, lancamento: Lancamento) -> None:
             lancamento.valor_centavos,
             lancamento.tipo,
             lancamento.item_id,
+            lancamento.custo_centavos,
         ),
     )
 
@@ -32,10 +34,10 @@ class RepositorioLancamentos:
     def listar(self) -> list[Lancamento]:
         with abrir(self.caminho_banco) as conexao:
             linhas = conexao.execute(
-                "SELECT data, descricao, categoria, valor_centavos, tipo, item_id "
+                "SELECT data, descricao, categoria, valor_centavos, tipo, item_id, custo_centavos "
                 "FROM lancamentos ORDER BY data, id"
             ).fetchall()
         return [
-            Lancamento(date.fromisoformat(data), descricao, categoria, valor, tipo, item_id)
-            for data, descricao, categoria, valor, tipo, item_id in linhas
+            Lancamento(date.fromisoformat(data), descricao, categoria, valor, tipo, item_id, custo)
+            for data, descricao, categoria, valor, tipo, item_id, custo in linhas
         ]

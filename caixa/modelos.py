@@ -18,6 +18,7 @@ class Lancamento:
     valor_centavos: int
     tipo: str
     item_id: int | None = None
+    custo_centavos: int = 0
 
     def __post_init__(self):
         if self.tipo not in CATEGORIAS:
@@ -28,3 +29,5 @@ class Lancamento:
             raise ValueError("O valor deve ser maior que zero.")
         if not self.descricao.strip():
             raise ValueError("A descrição não pode ficar vazia.")
+        if self.custo_centavos < 0:
+            raise ValueError("O custo não pode ser negativo.")

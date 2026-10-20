@@ -63,7 +63,7 @@ class RepositorioEstoque:
             item = _buscar(conexao, item_id)
             item.baixar()
             categoria = "Conserto" if item.peca in SERVICOS else "Venda de acessório"
-            lancamento = Lancamento(data, item.nome, categoria, valor_centavos, ENTRADA, item.id)
+            lancamento = Lancamento(data, item.nome, categoria, valor_centavos, ENTRADA, item.id, item.custo_centavos)
             conexao.execute(
                 "UPDATE estoque SET quantidade = ? WHERE id = ?", (item.quantidade, item.id)
             )

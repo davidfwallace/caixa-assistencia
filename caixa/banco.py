@@ -21,7 +21,8 @@ CREATE TABLE IF NOT EXISTS lancamentos (
     categoria TEXT NOT NULL,
     valor_centavos INTEGER NOT NULL,
     tipo TEXT NOT NULL,
-    item_id INTEGER REFERENCES estoque(id)
+    item_id INTEGER REFERENCES estoque(id),
+    custo_centavos INTEGER NOT NULL DEFAULT 0
 );
 """
 
@@ -37,12 +38,18 @@ def abrir(caminho_banco):
         conexao.close()
 
 
+# Colunas adicionadas depois da primeira versão do banco (migrações)
+COLUNAS_NOVAS = {
+    "item_id": "INTEGER REFERENCES estoque(id)",
+    "custo_centavos": "INTEGER NOT NULL DEFAULT 0",
+}
+
+
 def inicializar(caminho_banco):
     """Cria as tabelas e atualiza bancos antigos (migração)."""
     with abrir(caminho_banco) as conexao:
         conexao.executescript(SCHEMA)
         colunas = [coluna[1] for coluna in conexao.execute("PRAGMA table_info(lancamentos)")]
-        if "item_id" not in colunas:
-            conexao.execute(
-                "ALTER TABLE lancamentos ADD COLUMN item_id INTEGER REFERENCES estoque(id)"
-            )
+        for nome, definicao in COLUNAS_NOVAS.items():
+            if nome not in colunas:
+                conexao.execute(f"ALTER TABLE lancamentos ADD COLUMN {nome} {definicao}")
